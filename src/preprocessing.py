@@ -26,6 +26,29 @@ def build_holdout_split(
     return train, test.reset_index(drop=True)
 
 
+def build_validation_test_split(
+    ratings: pd.DataFrame,
+    min_positive_interactions: int = 3,
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """Use each eligible user's second-latest and latest positives as val/test."""
+    positive = ratings[ratings["rating"] >= POSITIVE_RATING_THRESHOLD].copy()
+    positive = positive.sort_values(["user_idx", "timestamp"])
+
+    counts = positive.groupby("user_idx")["item_idx"].size()
+    eligible_users = counts[counts >= min_positive_interactions].index
+    eligible = positive[positive["user_idx"].isin(eligible_users)].copy()
+
+    latest_two = eligible.groupby("user_idx").tail(2)
+    validation_idx = latest_two.groupby("user_idx").head(1).index
+    test_idx = latest_two.groupby("user_idx").tail(1).index
+
+    columns = ["user_idx", "user_id", "item_idx", "item_id"]
+    validation = eligible.loc[validation_idx, columns].copy().reset_index(drop=True)
+    test = eligible.loc[test_idx, columns].copy().reset_index(drop=True)
+    train = positive.drop(index=validation_idx.union(test_idx)).copy()
+    return train.reset_index(drop=True), validation, test
+
+
 def build_user_histories(train: pd.DataFrame, n_users: int) -> list[np.ndarray]:
     """Return train item indices for each user."""
     histories: list[np.ndarray] = []

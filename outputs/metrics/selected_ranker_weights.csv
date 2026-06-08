@@ -1,0 +1,4 @@
+seed,name,bpr,als,itemknn,content,popularity,novelty
+11,content_safety,0.2,0.2,0.15,0.25,0.05,0.15
+42,content_safety,0.2,0.2,0.15,0.25,0.05,0.15
+73,content_safety,0.2,0.2,0.15,0.25,0.05,0.15

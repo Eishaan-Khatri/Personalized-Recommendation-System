@@ -4,9 +4,17 @@
   "items": 3883,
   "rated_items": 3706,
   "positive_interactions": 575281,
-  "train_positive_interactions": 569244,
-  "evaluation_users": 6037,
+  "train_positive_interactions": 563211,
+  "validation_users": 6035,
+  "evaluation_users": 6035,
   "sparsity_percent": 95.73532020200125,
   "genres": 18,
-  "runtime_seconds": 56.6
+  "seeds": [
+    11,
+    42,
+    73
+  ],
+  "candidate_k": 200,
+  "sampled_negatives": 100,
+  "runtime_seconds": 273.91
 }
