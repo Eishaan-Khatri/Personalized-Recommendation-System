@@ -98,11 +98,13 @@ def main() -> None:
     recommendations.to_csv(RECOMMENDATIONS_DIR / "sample_user_recommendations.csv", index=False)
 
     positive_count = int((ratings["rating"] >= 4).sum())
+    rated_item_count = int(ratings["item_idx"].nunique())
     sparsity_percent = 100.0 * (1.0 - len(ratings) / (n_users * n_items))
     dataset_summary = {
         "ratings": int(len(ratings)),
         "users": n_users,
         "items": n_items,
+        "rated_items": rated_item_count,
         "positive_interactions": positive_count,
         "train_positive_interactions": int(len(train)),
         "evaluation_users": int(len(test)),

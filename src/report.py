@@ -41,7 +41,8 @@ def build_final_report(
 |---|---:|
 | Ratings | {dataset_summary["ratings"]:,} |
 | Users | {dataset_summary["users"]:,} |
-| Items | {dataset_summary["items"]:,} |
+| Catalog items | {dataset_summary["items"]:,} |
+| Rated items | {dataset_summary["rated_items"]:,} |
 | Positive interactions | {dataset_summary["positive_interactions"]:,} |
 | Training positives | {dataset_summary["train_positive_interactions"]:,} |
 | Evaluation users | {dataset_summary["evaluation_users"]:,} |

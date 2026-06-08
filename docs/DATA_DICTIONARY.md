@@ -5,6 +5,10 @@
 MovieLens 1M is used as the public benchmark dataset because it provides a
 large user-item interaction table and item metadata.
 
+The local raw files contain 3,883 catalog item rows in `movies.dat`; 3,706 of
+those items appear in `ratings.dat`. The recommender scores the full catalog and
+learns interaction signals from rated items.
+
 ## Tables
 
 ### Ratings

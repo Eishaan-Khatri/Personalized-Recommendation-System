@@ -32,7 +32,8 @@ eligible user.
 |---|---:|
 | Ratings processed | 1,000,209 |
 | Users | 6,040 |
-| Items | 3,883 |
+| Catalog items | 3,883 |
+| Rated items | 3,706 |
 | Positive interactions | 575,281 |
 | Training positive interactions | 569,244 |
 | Evaluation users | 6,037 |

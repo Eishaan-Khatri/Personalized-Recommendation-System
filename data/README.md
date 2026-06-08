@@ -12,7 +12,8 @@ MovieLens 1M contains approximately:
 
 - 1,000,209 ratings,
 - 6,040 users,
-- 3,900 movies/items,
+- 3,883 catalog movies/items,
+- 3,706 movies/items that appear in the ratings file,
 - genre metadata for items.
 
 The project treats ratings of 4 or 5 as positive implicit-feedback events for
