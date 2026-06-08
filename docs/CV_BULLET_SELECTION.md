@@ -2,22 +2,24 @@
 
 ## Purpose
 
-This file exists to select exactly three strong CV points for the Personalized
-Recommendation System project without using unsupported business-impact claims.
+This file selects strong CV points for the Personalized Recommendation System
+project using only metrics that exist in the repository outputs.
 
-The project is strongest for roles involving:
+The project is strongest for:
 
 - personalisation,
 - recommendations,
 - discovery,
 - user-item modeling,
-- ranking metrics,
-- content platforms,
-- product-facing data science.
+- candidate generation,
+- hybrid ranking,
+- cold-start handling,
+- evaluation discipline.
 
-It is especially useful for Pratilipi-style roles because the project connects
-benchmark recommendation modeling with content-discovery surfaces such as
-homepage recommendations, similar-story retrieval, and reader-interest modeling.
+It is especially useful for Pratilipi-style roles because the project connects a
+public recommender benchmark with content-discovery surfaces such as homepage
+ranking, similar-item retrieval, reader-interest modeling, and cold-start
+fallbacks.
 
 ## Evidence Sources
 
@@ -30,15 +32,23 @@ Use only these project-backed facts in the CV.
 | Catalog items | 3,883 | `outputs/metrics/dataset_summary.json` |
 | Rated items | 3,706 | `outputs/metrics/dataset_summary.json` |
 | Positive interactions | 575,281 | `outputs/metrics/dataset_summary.json` |
-| Training positive interactions | 569,244 | `outputs/metrics/dataset_summary.json` |
-| Evaluation users | 6,037 | `outputs/metrics/dataset_summary.json` |
-| Matrix sparsity | 95.7353% | `outputs/metrics/dataset_summary.json` |
-| Best model | Hybrid | `outputs/metrics/model_comparison.csv` |
-| Hybrid Recall@10 | 0.0500 | `outputs/metrics/model_comparison.csv` |
-| Hybrid NDCG@10 | 0.0241 | `outputs/metrics/model_comparison.csv` |
-| Hybrid Catalog Coverage@10 | 15.94% | `outputs/metrics/model_comparison.csv` |
-| Popularity Recall@10 | 0.0406 | `outputs/metrics/model_comparison.csv` |
-| Popularity Catalog Coverage@10 | 2.96% | `outputs/metrics/model_comparison.csv` |
+| Training positive interactions | 563,211 | `outputs/metrics/dataset_summary.json` |
+| Validation users | 6,035 | `outputs/metrics/dataset_summary.json` |
+| Test/evaluation users | 6,035 | `outputs/metrics/dataset_summary.json` |
+| Candidate retrieval depth | top-200 | `outputs/metrics/dataset_summary.json` |
+| Seeds | 11, 42, 73 | `outputs/metrics/dataset_summary.json` |
+| Best all-item Recall@10 model | two-stage hybrid ranker | `outputs/metrics/model_comparison.csv` |
+| Two-stage Recall@10 | 0.0584 +/- 0.0007 | `outputs/metrics/model_comparison.csv` |
+| Two-stage NDCG@10 | 0.0283 +/- 0.0004 | `outputs/metrics/model_comparison.csv` |
+| Two-stage MAP@10 | 0.0194 +/- 0.0003 | `outputs/metrics/model_comparison.csv` |
+| Two-stage Coverage@10 | 23.65% +/- 1.33% | `outputs/metrics/model_comparison.csv` |
+| Popularity Recall@10 | 0.0399 | `outputs/metrics/model_comparison.csv` |
+| Popularity Coverage@10 | 2.96% | `outputs/metrics/model_comparison.csv` |
+| Best sampled 100-negative model | ItemKNN | `outputs/metrics/sampled_100_negative_metrics.csv` |
+| Sampled 100-negative HitRate@10 | 0.6154 +/- 0.0018 | `outputs/metrics/sampled_100_negative_metrics.csv` |
+| Sampled 100-negative NDCG@10 | 0.3466 +/- 0.0009 | `outputs/metrics/sampled_100_negative_metrics.csv` |
+| Cold-item hybrid fallback Recall@10 | 0.0763 | `outputs/metrics/cold_start_experiment.csv` |
+| Cold-item hybrid fallback NDCG@10 | 0.0299 | `outputs/metrics/cold_start_experiment.csv` |
 | Sample recommendation rows | 250 | `outputs/recommendations/sample_user_recommendations.csv` |
 
 ## What The Numbers Mean
@@ -47,9 +57,14 @@ The numbers are real project outputs, but they are offline benchmark numbers.
 
 - The users are anonymous MovieLens benchmark users, not Pratilipi users.
 - Ratings are public benchmark interactions, not production platform events.
-- Recall@10, NDCG@10, MAP@10, and coverage are offline ranking metrics.
-- Catalog coverage measures how widely recommendations spread across the item catalog.
-- These metrics do not prove conversion, retention, revenue, or live engagement impact.
+- The project uses a train/validation/test split based on each eligible user's
+  latest positive interactions.
+- Ranker weights are selected on validation and final metrics are reported on
+  the test holdout.
+- Recall@10, NDCG@10, MAP@10, coverage, long-tail share, diversity, Gini, and
+  sampled-negative metrics are offline recommender metrics.
+- These metrics do not prove conversion, retention, revenue, or live engagement
+  impact.
 
 ## Claims To Avoid
 
@@ -62,181 +77,182 @@ Do not use these in the CV unless future evidence exists:
 - served live users,
 - used Pratilipi data,
 - ran real A/B tests,
-- achieved business impact from recommendations.
+- achieved business impact from recommendations,
+- achieved target Recall@10 of 0.0746,
+- achieved target sampled HitRate@10 of 0.641.
 
-These claims are too risky because the current project evidence only supports an
-offline benchmark pipeline.
+The last two target-style numbers were not produced by the current run. The
+current safe numbers are the CSV-backed values above.
 
 ## Selection Criteria For The 3 CV Points
 
 The three bullets should cover three different strengths:
 
-1. Scale and pipeline construction.
-2. Modeling and measurable evaluation.
-3. Product relevance to personalization, recommendations, and discovery.
+1. Scale and two-stage system design.
+2. Validation, model comparison, and seed variance.
+3. Discovery/cold-start relevance beyond plain accuracy.
 
 Avoid three bullets that all say "built a recommender." Each bullet needs a
 different job in the CV.
 
 ## Candidate Bullet Bank
 
-### Candidate 1 - Scale and data pipeline
+### Candidate 1 - Two-stage architecture
 
-Built an offline recommendation pipeline over MovieLens 1M, processing
-1,000,209 user-item ratings across 6,040 anonymous users and 3,883 catalog
-items with holdout-based top-K evaluation.
-
-Why it is useful:
-
-- establishes dataset scale,
-- shows this is not a tiny toy example,
-- gives the recruiter immediate proof of project substance.
-
-Risk:
-
-- safe, as long as MovieLens is clearly treated as benchmark data.
-
-### Candidate 2 - Model comparison
-
-Compared popularity, content-based, collaborative filtering, and hybrid
-recommenders using Recall@10, MAP@10, NDCG@10, and catalog coverage over 6,037
-evaluated users.
+Built a two-stage recommendation pipeline over MovieLens 1M, processing
+1,000,209 ratings across 6,040 anonymous users with BPR/ALS/ItemKNN top-200
+candidate generation followed by hybrid re-ranking.
 
 Why it is useful:
 
-- shows experimentation discipline,
-- proves more than one model was implemented,
-- aligns with recommendation-system evaluation.
+- directly addresses recommender-system architecture,
+- sounds more senior than a single notebook model,
+- maps well to discovery/feed ranking systems.
 
 Risk:
 
 - safe.
 
-### Candidate 3 - Best measured result
+### Candidate 2 - Validation and model comparison
 
-Improved Recall@10 from 0.0406 to 0.0500 over the popularity baseline with a
-hybrid model, while increasing Catalog Coverage@10 from 2.96% to 15.94%.
-
-Why it is useful:
-
-- has real before/after numbers,
-- shows ranking quality and discovery breadth,
-- is much safer than fake conversion/retention numbers.
-
-Risk:
-
-- safe, but should be phrased as offline benchmark improvement, not product lift.
-
-### Candidate 4 - Batch scoring
-
-Generated top-K recommendation outputs through batch scoring, including 250
-sample ranked recommendations with item titles, genres, model scores, and user
-ids for inspection.
+Tuned hybrid ranker weights on a validation holdout and compared popularity,
+content-based, ItemKNN, BPR matrix factorization, implicit ALS, and hybrid
+rankers across 3 seeds.
 
 Why it is useful:
 
-- shows the project produces concrete outputs,
-- useful for data-science and ML-engineering resumes.
+- fixes the previous missing validation split,
+- shows experimentation discipline,
+- avoids over-relying on one lucky run.
 
 Risk:
 
-- safe, but less impressive than model comparison unless the role stresses
-  pipelines.
+- safe.
 
-### Candidate 5 - Content-discovery mapping
+### Candidate 3 - Best all-item result
 
-Mapped user-item recommendation logic to content-discovery surfaces such as
-personalized homepage ranking, similar-story retrieval, cold-start handling, and
-reader-interest modeling.
+Achieved the best all-item Recall@10 with a two-stage hybrid ranker
+(0.0584 +/- 0.0007), with NDCG@10 of 0.0283 +/- 0.0004 and MAP@10 of
+0.0194 +/- 0.0003 across 6,035 test users.
 
 Why it is useful:
 
-- directly fits Pratilipi,
-- shows product thinking,
-- separates the project from generic MovieLens notebook work.
+- gives real test-set numbers,
+- includes seed variance,
+- shows that the ranker won on Recall@10.
 
 Risk:
 
-- safe if phrased as mapping or relevance, not as implementation on Pratilipi data.
+- safe, but do not say it won every metric. ItemKNN has slightly higher
+  NDCG@10 in the current run.
 
-### Candidate 6 - Sparsity and real recommender difficulty
+### Candidate 4 - Coverage/discovery improvement
 
-Modeled recommendations under 95.7353% user-item matrix sparsity, using positive
-interaction holdouts to test whether models recovered each user's hidden item in
-the top 10.
+Expanded Catalog Coverage@10 from 2.96% for popularity to 23.65% +/- 1.33% with
+the two-stage hybrid ranker, improving discovery breadth while preserving higher
+Recall@10 than the popularity baseline.
 
 Why it is useful:
 
-- shows understanding of sparse user-item data,
-- useful for technical interviews.
+- this is the strongest discovery/product angle,
+- directly addresses the weakness of popularity-only recommendations,
+- better Pratilipi fit than just saying "accuracy."
 
 Risk:
 
-- safe, but may be too technical for a short CV unless the role is strongly
-  recommender-focused.
+- safe.
+
+### Candidate 5 - Sampled-negative diagnostic
+
+Reported sampled 100-negative evaluation separately, where ItemKNN achieved
+0.6154 +/- 0.0018 HitRate@10 and 0.3466 +/- 0.0009 NDCG@10.
+
+Why it is useful:
+
+- shows recommender evaluation maturity,
+- demonstrates the difference between all-item and sampled-negative tasks.
+
+Risk:
+
+- safe only if clearly described as sampled-negative. Do not mix this with
+  all-item Recall@10.
+
+### Candidate 6 - Cold-start fallback
+
+Simulated low-interaction cold items by hiding 894 items from collaborative
+training; hybrid content/novelty fallback reached 0.0763 Recall@10 and 0.0299
+NDCG@10 on 131 cold-item test users.
+
+Why it is useful:
+
+- directly addresses cold-start, which most student projects ignore,
+- useful for content platforms with new stories/authors/items.
+
+Risk:
+
+- safe, but the sample is smaller than the main test set. Keep it as fallback
+  analysis, not the main project headline.
 
 ## Final Recommended 3 CV Points
 
 Use this version for Pratilipi or similar personalization/recommendation roles.
 
-1. Built an offline hybrid recommendation pipeline over MovieLens 1M, processing
-   1,000,209 user-item ratings across 6,040 anonymous users and 3,883 catalog
-   items with holdout-based top-K evaluation.
+1. Built a two-stage recommendation pipeline over MovieLens 1M, processing
+   1,000,209 ratings across 6,040 anonymous users with BPR/ALS/ItemKNN top-200
+   candidate generation followed by hybrid re-ranking.
 
-2. Compared popularity, content-based, collaborative filtering, and hybrid
-   recommenders over 6,037 evaluated users using Recall@10, MAP@10, NDCG@10,
-   and catalog coverage.
+2. Tuned hybrid ranker weights on a validation holdout and compared popularity,
+   content-based, ItemKNN, BPR matrix factorization, implicit ALS, and hybrid
+   rankers across 3 seeds.
 
-3. Improved offline Recall@10 from 0.0406 to 0.0500 over the popularity
-   baseline with a hybrid model, while expanding Catalog Coverage@10 from 2.96%
-   to 15.94%.
+3. Improved all-item Recall@10 over popularity from 0.0399 to 0.0584 +/- 0.0007
+   and expanded Catalog Coverage@10 from 2.96% to 23.65% +/- 1.33% with the
+   two-stage hybrid ranker.
 
 ## Strong 3-Bullet CV Version
 
 Use this when the CV has enough space for three full bullets.
 
-- Built an offline hybrid recommendation pipeline over MovieLens 1M, processing
-  1,000,209 user-item ratings across 6,040 anonymous users and 3,883 catalog
-  items with holdout-based top-K evaluation.
-- Compared popularity, content-based, collaborative filtering, and hybrid
-  recommenders over 6,037 evaluated users using Recall@10, MAP@10, NDCG@10, and
-  catalog coverage.
-- Improved offline Recall@10 from 0.0406 to 0.0500 over the popularity baseline
-  with a hybrid model, while expanding Catalog Coverage@10 from 2.96% to 15.94%.
+- Built a two-stage recommendation pipeline over MovieLens 1M, processing
+  1,000,209 ratings across 6,040 anonymous users with BPR/ALS/ItemKNN top-200
+  candidate generation followed by hybrid re-ranking.
+- Tuned hybrid ranker weights on a validation holdout and compared popularity,
+  content-based, ItemKNN, BPR matrix factorization, implicit ALS, and hybrid
+  rankers across 3 seeds.
+- Improved all-item Recall@10 over popularity from 0.0399 to 0.0584 +/- 0.0007
+  and expanded Catalog Coverage@10 from 2.96% to 23.65% +/- 1.33% with the
+  two-stage hybrid ranker.
 
 ## Pratilipi-Focused 3-Bullet CV Version
 
 Use this version if the role specifically mentions Personalisation,
 Recommendations, and Discovery.
 
-- Built a hybrid recommendation and discovery pipeline over MovieLens 1M,
-  processing 1,000,209 user-item ratings across 6,040 anonymous users and 3,883
-  catalog items.
-- Evaluated popularity, content-based, collaborative filtering, and hybrid
-  recommenders over 6,037 users using Recall@10, NDCG@10, MAP@10, and catalog
-  coverage.
-- Mapped the pipeline to content-discovery use cases such as personalized
-  homepage ranking, similar-item retrieval, reader-interest modeling, and
-  cold-start recommendation handling.
+- Built a two-stage recommendation and discovery pipeline over MovieLens 1M,
+  using BPR/ALS/ItemKNN candidate retrieval and hybrid re-ranking across
+  1,000,209 user-item ratings.
+- Tuned ranker weights on validation and evaluated popularity, content-based,
+  ItemKNN, BPR, ALS, and hybrid models across 3 seeds on 6,035 test users.
+- Expanded Catalog Coverage@10 from 2.96% to 23.65% +/- 1.33% and added a
+  cold-item fallback experiment for low-interaction catalog items.
 
-## Short CV Version
+## One-Line CV Version
 
 Use this if the CV has only one line for the project.
 
-Built a hybrid recommendation pipeline over MovieLens 1M, comparing popularity,
-content-based, collaborative, and hybrid models across 6,037 evaluated users;
-hybrid improved offline Recall@10 from 0.0406 to 0.0500 and Coverage@10 from
-2.96% to 15.94%.
+Built a two-stage MovieLens-1M recommender using BPR/ALS/ItemKNN top-200
+candidate retrieval and hybrid re-ranking; across 3 seeds, improved all-item
+Recall@10 from 0.0399 to 0.0584 and Coverage@10 from 2.96% to 23.65%.
 
 ## Resume Header Line
 
 Recommended project heading:
 
-`Personalized Recommendation System | Python, pandas, NumPy, collaborative filtering, content-based filtering, hybrid ranking, batch scoring`
+`Personalized Recommendation System | Python, NumPy, pandas, ItemKNN, BPR, ALS, hybrid re-ranking, batch scoring`
 
 Alternative Pratilipi-focused heading:
 
-`Personalized Recommendation System | Recommendations, discovery, user-item modeling, hybrid ranking, batch scoring`
+`Personalized Recommendation System | Recommendations, discovery, user-item modeling, candidate generation, hybrid ranking`
 
 ## Interview Explanation
 
@@ -244,16 +260,17 @@ Use this explanation if asked where the numbers came from:
 
 The project uses MovieLens 1M, a public recommender-system benchmark. The users
 are anonymous MovieLens users, not Pratilipi users. I treated ratings of 4 or 5
-as positive interactions, held out each eligible user's latest positive item,
-and evaluated whether each model could recover that hidden item in the top 10.
-The numbers in the CV are offline ranking metrics from that evaluation, not
-business-impact claims.
+as positive interactions, used the second-latest positive item for validation,
+and used the latest positive item for final test evaluation. The ranker weights
+were selected on validation. The CV numbers are offline test metrics averaged
+over three seeds, not business-impact claims.
 
 ## Final Recommendation
 
 For the Pratilipi CV, use the Pratilipi-focused 3-bullet version if the resume
 already has enough technical detail elsewhere. Use the strong 3-bullet version
-if this project needs to carry most of the recommendation-system proof.
+if this project needs to carry most of the recommender-system proof.
 
-Do not use conversion or retention claims. The offline ranking and coverage
-numbers are strong enough, and they are defensible in an interview.
+Do not use conversion or retention claims. The validation split, two-stage
+architecture, coverage improvement, seed variance, sampled-negative check, and
+cold-start analysis are now the defensible proof.

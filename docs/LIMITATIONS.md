@@ -23,19 +23,38 @@ The implemented models are intentionally explainable and lightweight:
 
 - popularity baseline,
 - content-based scoring,
-- implicit-feedback collaborative filtering,
-- hybrid scoring.
+- ItemKNN,
+- BPR matrix factorization,
+- implicit ALS,
+- two-stage hybrid re-ranking,
+- validation tuning,
+- sampled-negative evaluation,
+- cold-start fallback analysis.
 
 Deep sequence models, graph neural recommenders, approximate nearest-neighbor
 serving, and real-time feature pipelines are natural future extensions but are
 not required for the core proof.
+
+## Metric Caveats
+
+All-item Recall@10 and sampled-negative HitRate@10 are not comparable. The
+sampled-negative task is easier because each user has one positive and only 100
+sampled negatives. The README reports both but keeps them separate.
+
+Cold-start percentage lift is not reported when the popularity fallback has a
+zero score. In that case, absolute Recall@10 and NDCG@10 are the defensible
+numbers.
 
 ## Responsible Claiming
 
 Safe claims:
 
 - benchmark dataset scale,
+- validation/test split design,
+- mean and standard deviation across repeated seeds,
 - measured offline ranking metrics,
+- sampled-negative diagnostic metrics,
+- cold-start fallback metrics,
 - generated recommendation outputs,
 - implemented model families,
 - documented product mapping.

@@ -1,7 +1,8 @@
 # Personalized Recommendation System
 
-Hybrid recommendation and discovery pipeline using collaborative filtering,
-content-based signals, ranking metrics, and batch recommendation generation.
+Two-stage recommendation and discovery pipeline using ItemKNN, BPR matrix
+factorization, implicit ALS, content features, hybrid re-ranking, validation
+tuning, seed variance, cold-start analysis, and batch recommendation generation.
 
 ## Problem
 
@@ -17,16 +18,27 @@ Pratilipi, where users discover stories, authors, genres, languages, and formats
 ## What The Project Demonstrates
 
 - user-item interaction modeling over a 1M+ interaction benchmark,
-- popularity, collaborative, content-based, and hybrid recommendation approaches,
+- popularity, content-based, ItemKNN, BPR, ALS, and hybrid recommendation approaches,
+- validation tuning before final test reporting,
+- 3-seed repeated runs with mean and standard deviation,
 - holdout evaluation with ranking metrics such as Precision@K, Recall@K,
   MAP@K, and NDCG@K,
+- discovery metrics including catalog coverage, long-tail share, intra-list
+  diversity, average genre diversity, and Gini concentration,
+- sampled 100-negative recommender evaluation,
+- low-interaction cold-item fallback analysis,
 - batch top-K recommendation generation,
 - product reasoning for personalization, recommendations, and discovery.
 
 ## Measured Results
 
-The full pipeline was run on MovieLens 1M with one held-out positive item per
-eligible user.
+The full pipeline was run on MovieLens 1M with a validation/test split:
+
+- train: all except each eligible user's last two positive interactions,
+- validation: second-latest positive interaction,
+- test: latest positive interaction.
+
+Final numbers below are test-set means across 3 seeds.
 
 | Metric | Value |
 |---|---:|
@@ -35,23 +47,37 @@ eligible user.
 | Catalog items | 3,883 |
 | Rated items | 3,706 |
 | Positive interactions | 575,281 |
-| Training positive interactions | 569,244 |
-| Evaluation users | 6,037 |
+| Training positive interactions | 563,211 |
+| Validation users | 6,035 |
+| Evaluation users | 6,035 |
 | User-item matrix sparsity | 95.7353% |
-| Best offline model | Hybrid |
-| Best Recall@10 | 0.0500 |
-| Best NDCG@10 | 0.0241 |
-| Best Catalog Coverage@10 | 15.94% |
+| Candidate retrieval depth | top-200 |
+| Seeds | 11, 42, 73 |
+| Best all-item model | Two-stage hybrid ranker |
+| Recall@10 mean +/- std | 0.0584 +/- 0.0007 |
+| NDCG@10 mean +/- std | 0.0283 +/- 0.0004 |
+| MAP@10 mean +/- std | 0.0194 +/- 0.0003 |
+| Catalog Coverage@10 mean +/- std | 23.65% +/- 1.33% |
+| Sampled 100-negative best HitRate@10 | 0.6154 +/- 0.0018 |
+| Cold-item hybrid fallback NDCG@10 | 0.0299 |
 
-The hybrid model improved Recall@10 over the popularity baseline by 23.3%
-relative and expanded Catalog Coverage@10 from 2.96% to 15.94%.
+The two-stage hybrid ranker improved all-item Recall@10 over the popularity
+baseline from 0.0399 to 0.0584 and expanded Catalog Coverage@10 from 2.96% to
+23.65%. The sampled 100-negative evaluation is reported separately because it is
+an easier candidate-set task and should not be mixed with all-item metrics.
 
 ## Generated Outputs
 
 The pipeline writes measured artifacts to:
 
 - `outputs/metrics/model_comparison.csv`
+- `outputs/metrics/seed_metrics.csv`
+- `outputs/metrics/hyperparameter_search.csv`
+- `outputs/metrics/selected_ranker_weights.csv`
 - `outputs/metrics/catalog_coverage.csv`
+- `outputs/metrics/sampled_100_negative_metrics.csv`
+- `outputs/metrics/sampled_100_negative_seed_metrics.csv`
+- `outputs/metrics/cold_start_experiment.csv`
 - `outputs/metrics/dataset_summary.json`
 - `outputs/recommendations/sample_user_recommendations.csv`
 - `reports/final_report.md`
@@ -68,22 +94,37 @@ The pipeline writes measured artifacts to:
 
 ## Methods
 
-The project is built around five recommender variants:
+The project is built around seven recommender variants:
 
 1. Popularity baseline.
 2. Content-based user profile scoring from item metadata.
-3. Collaborative filtering with implicit-feedback matrix factorization.
-4. Hybrid score combining collaborative, content, and popularity signals.
-5. Batch top-K recommendation generation over the item catalog.
+3. Collaborative ItemKNN.
+4. BPR matrix factorization.
+5. Implicit ALS.
+6. Hybrid all-item score blend.
+7. Two-stage hybrid ranker: retrieve top-200 candidates with BPR, ALS, and
+   ItemKNN; re-rank with collaborative, content, popularity, and novelty signals.
 
 ## Model Comparison
 
-| Model | Precision@10 | Recall@10 | MAP@10 | NDCG@10 | Coverage@10 |
+| Model | Recall@10 | NDCG@10 | MAP@10 | Coverage@10 | Long-tail@10 |
 |---|---:|---:|---:|---:|---:|
-| Hybrid | 0.0050 | 0.0500 | 0.0164 | 0.0241 | 0.1594 |
-| Popularity | 0.0041 | 0.0406 | 0.0130 | 0.0193 | 0.0296 |
-| Collaborative filtering | 0.0038 | 0.0384 | 0.0114 | 0.0177 | 0.1537 |
-| Content-based | 0.0016 | 0.0156 | 0.0048 | 0.0073 | 0.7126 |
+| Two-stage hybrid ranker | 0.0584 +/- 0.0007 | 0.0283 +/- 0.0004 | 0.0194 +/- 0.0003 | 0.2365 +/- 0.0133 | 0.0132 +/- 0.0018 |
+| Hybrid score blend | 0.0583 +/- 0.0006 | 0.0283 +/- 0.0004 | 0.0193 +/- 0.0003 | 0.2316 +/- 0.0123 | 0.0137 +/- 0.0018 |
+| ItemKNN | 0.0580 +/- 0.0000 | 0.0287 +/- 0.0000 | 0.0199 +/- 0.0000 | 0.0901 +/- 0.0000 | 0.0009 +/- 0.0000 |
+| Popularity | 0.0399 +/- 0.0000 | 0.0188 +/- 0.0000 | 0.0126 +/- 0.0000 | 0.0296 +/- 0.0000 | 0.0000 +/- 0.0000 |
+| BPR matrix factorization | 0.0389 +/- 0.0014 | 0.0177 +/- 0.0007 | 0.0115 +/- 0.0006 | 0.2028 +/- 0.0233 | 0.0129 +/- 0.0023 |
+| Content-based | 0.0149 +/- 0.0000 | 0.0066 +/- 0.0000 | 0.0042 +/- 0.0000 | 0.7247 +/- 0.0000 | 0.7412 +/- 0.0000 |
+| Implicit ALS | 0.0021 +/- 0.0006 | 0.0009 +/- 0.0002 | 0.0005 +/- 0.0001 | 0.1945 +/- 0.0234 | 0.9998 +/- 0.0002 |
+
+## Cold-Start And Sampled-Negative Checks
+
+| Experiment | Best result | Interpretation |
+|---|---:|---|
+| Sampled 100-negative HitRate@10 | 0.6154 +/- 0.0018 | ItemKNN was strongest when each user had one positive plus 100 sampled negatives. |
+| Sampled 100-negative NDCG@10 | 0.3466 +/- 0.0009 | Sampled-negative metrics are easier than all-item ranking and are reported separately. |
+| Cold-item hybrid fallback Recall@10 | 0.0763 | Hybrid content/novelty fallback recovered hidden low-interaction items better than popularity. |
+| Cold-item hybrid fallback NDCG@10 | 0.0299 | Popularity fallback scored 0.0000 NDCG@10 after cold items were hidden. |
 
 ## Pratilipi Relevance
 
@@ -107,9 +148,9 @@ lift. Business metrics require real online experiments and product telemetry.
 ## Safe Resume Claim
 
 Built a hybrid recommendation pipeline over a 1M+ interaction benchmark dataset,
-combining collaborative filtering, content-based metadata signals, implicit user
-embeddings, ranking-oriented offline evaluation, and top-K batch recommendation
-generation for 6,037 evaluated users.
+using ItemKNN, BPR/ALS candidate generation, validation-tuned hybrid re-ranking,
+3-seed offline evaluation, sampled-negative checks, and cold-item fallback
+analysis over 6,035 evaluated users.
 
 ## Quick Start
 
