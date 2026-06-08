@@ -23,16 +23,37 @@ Pratilipi, where users discover stories, authors, genres, languages, and formats
 - batch top-K recommendation generation,
 - product reasoning for personalization, recommendations, and discovery.
 
-## Planned Outputs
+## Measured Results
+
+The full pipeline was run on MovieLens 1M with one held-out positive item per
+eligible user.
+
+| Metric | Value |
+|---|---:|
+| Ratings processed | 1,000,209 |
+| Users | 6,040 |
+| Items | 3,883 |
+| Positive interactions | 575,281 |
+| Training positive interactions | 569,244 |
+| Evaluation users | 6,037 |
+| User-item matrix sparsity | 95.7353% |
+| Best offline model | Hybrid |
+| Best Recall@10 | 0.0500 |
+| Best NDCG@10 | 0.0241 |
+| Best Catalog Coverage@10 | 15.94% |
+
+The hybrid model improved Recall@10 over the popularity baseline by 23.3%
+relative and expanded Catalog Coverage@10 from 2.96% to 15.94%.
+
+## Generated Outputs
 
 The pipeline writes measured artifacts to:
 
 - `outputs/metrics/model_comparison.csv`
 - `outputs/metrics/catalog_coverage.csv`
+- `outputs/metrics/dataset_summary.json`
 - `outputs/recommendations/sample_user_recommendations.csv`
 - `reports/final_report.md`
-
-The README will be updated with final measured numbers after the pipeline is run.
 
 ## Repository Map
 
@@ -54,6 +75,15 @@ The project is built around five recommender variants:
 4. Hybrid score combining collaborative, content, and popularity signals.
 5. Batch top-K recommendation generation over the item catalog.
 
+## Model Comparison
+
+| Model | Precision@10 | Recall@10 | MAP@10 | NDCG@10 | Coverage@10 |
+|---|---:|---:|---:|---:|---:|
+| Hybrid | 0.0050 | 0.0500 | 0.0164 | 0.0241 | 0.1594 |
+| Popularity | 0.0041 | 0.0406 | 0.0130 | 0.0193 | 0.0296 |
+| Collaborative filtering | 0.0038 | 0.0384 | 0.0114 | 0.0177 | 0.1537 |
+| Content-based | 0.0016 | 0.0156 | 0.0048 | 0.0073 | 0.7126 |
+
 ## Pratilipi Relevance
 
 The project is shaped for personalisation, recommendations, and discovery work:
@@ -72,6 +102,13 @@ See `docs/PRATILIPI_DISCOVERY_MAPPING.md` for the detailed product mapping.
 This is an offline benchmark project. It does not use private Pratilipi data,
 does not claim production deployment, and does not claim conversion or retention
 lift. Business metrics require real online experiments and product telemetry.
+
+## Safe Resume Claim
+
+Built a hybrid recommendation pipeline over a 1M+ interaction benchmark dataset,
+combining collaborative filtering, content-based metadata signals, implicit user
+embeddings, ranking-oriented offline evaluation, and top-K batch recommendation
+generation for 6,037 evaluated users.
 
 ## Quick Start
 

@@ -1,0 +1,5 @@
+model,catalog_coverage_at_10,unique_recommended_items
+hybrid,0.15941282513520474,619
+popularity,0.029616276075199587,115
+collaborative_filtering,0.15374710275560133,597
+content_based,0.7125933556528458,2767

@@ -1,0 +1,11 @@
+{
+  "ratings": 1000209,
+  "users": 6040,
+  "items": 3883,
+  "positive_interactions": 575281,
+  "train_positive_interactions": 569244,
+  "evaluation_users": 6037,
+  "sparsity_percent": 95.73532020200125,
+  "genres": 18,
+  "runtime_seconds": 52.84
+}
