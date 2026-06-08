@@ -5,6 +5,26 @@ from __future__ import annotations
 import pandas as pd
 
 
+def _markdown_table(frame: pd.DataFrame) -> str:
+    """Render a small DataFrame as a Markdown table without extra dependencies."""
+    columns = list(frame.columns)
+    rows = []
+    for _, row in frame.iterrows():
+        values = []
+        for column in columns:
+            value = row[column]
+            if isinstance(value, float):
+                values.append(f"{value:.4f}")
+            else:
+                values.append(str(value))
+        rows.append(values)
+
+    header = "| " + " | ".join(columns) + " |"
+    separator = "| " + " | ".join(["---"] * len(columns)) + " |"
+    body = ["| " + " | ".join(values) + " |" for values in rows]
+    return "\n".join([header, separator, *body])
+
+
 def build_final_report(
     metrics: pd.DataFrame,
     dataset_summary: dict[str, int | float],
@@ -12,7 +32,7 @@ def build_final_report(
     top_k: int,
 ) -> str:
     """Create the Markdown final report."""
-    metric_table = metrics.to_markdown(index=False, floatfmt=".4f")
+    metric_table = _markdown_table(metrics)
     return f"""# Final Report
 
 ## Dataset Summary
