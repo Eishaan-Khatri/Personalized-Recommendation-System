@@ -1,145 +1,152 @@
 # Methodology
 
-## Objective
+This project tries to answer a practical question:
 
-Generate personalized top-K item recommendations using user behavior and item
-attributes, then evaluate recommendation quality with offline ranking metrics,
-seed variance, validation tuning, sampled-negative checks, and cold-start
-fallback analysis.
+**Can we use a user's past likes to rank the next items they may like?**
 
-## Interaction Framing
+The code uses MovieLens 1M, but the setup is close to what a reading platform
+would do with readers and stories.
 
-Ratings of 4 or 5 are treated as positive implicit interactions.
+## What Counts As A Like
 
-For each user with at least three positive interactions:
+MovieLens ratings go from 1 to 5.
 
-- all except the latest two positives are used for training,
-- the second-latest positive item is used for validation,
-- the latest positive item is used for final test evaluation.
+I treated ratings of **4 or 5** as positive interactions. That means the user
+liked the item enough for it to train or test the recommender.
 
-This creates a practical next-item recommendation task:
+## Train, Validation, And Test Split
 
-> Given the user's previous positive interactions, can the system recover hidden
-> future positive items in the top-K recommendations?
+For each user with enough positive history:
 
-## Models
+- old liked items go into training,
+- the second-latest liked item goes into validation,
+- the latest liked item goes into test.
 
-### Popularity Baseline
+This is a next-item style task.
 
-Ranks items by positive interaction count in the training set.
+Simple fictional example:
 
-Purpose:
+> A user liked 20 movies over time. The model sees the first 18. It uses movie
+> 19 to tune the ranker. Then it has to rank movie 20 near the top.
 
-- basic sanity check,
-- measures how far personalized models improve beyond popularity,
-- exposes popularity bias.
+That is stricter than randomly hiding an item, because time order matters.
 
-### Content-Based Recommender
+## Models Compared
 
-Builds a user profile from the average genre vector of the user's training
-items, then scores candidate items by cosine similarity.
+### Popularity
 
-Purpose:
+This recommends what many users liked.
 
-- handles sparse user histories better than pure collaborative filtering,
-- demonstrates use of item metadata,
-- maps naturally to story genre, language, theme, and format signals.
+It is a useful baseline because every recommender should beat "show everyone the
+same famous items." It also shows how narrow the catalog becomes when popularity
+does all the work.
+
+### Content-Based
+
+This looks at item tags, such as genres.
+
+If a user liked many drama and thriller movies, this model gives higher scores
+to other drama and thriller movies. On a reading app, the same idea could use
+language, theme, author, format, or story tags.
 
 ### ItemKNN
 
-Builds item-item collaborative similarity from co-interaction patterns and
-scores candidates by similarity to each user's history.
+This asks: "Which items are liked by similar users?"
 
-Purpose:
-
-- strong collaborative baseline,
-- interpretable "users who liked similar items" behavior,
-- useful for sampled-negative evaluation.
+If many users liked item A and item B together, then item B becomes a good
+candidate for someone who liked item A.
 
 ### BPR Matrix Factorization
 
-Uses implicit-feedback matrix factorization trained with Bayesian Personalized
-Ranking style updates. Each step compares a positive user-item interaction
-against a sampled negative item.
+BPR learns user and item embeddings from behavior.
 
-Purpose:
-
-- learns user and item embeddings from interaction behavior,
-- captures taste similarity not visible in raw metadata,
-- provides a scalable candidate scoring mechanism for batch recommendation.
+The training loop compares a liked item against a not-seen item and tries to
+score the liked item higher. This is useful when raw tags are not enough to
+describe taste.
 
 ### Implicit ALS
 
-Uses alternating least-squares style positive-feedback factor updates.
+ALS is another embedding-style model. I added it so the project does not depend
+on only one collaborative filtering method.
 
-Purpose:
+### Hybrid Score Blend
 
-- adds a second matrix-factorization family,
-- checks whether the final result depends on one collaborative model,
-- gives a contrasting baseline for BPR and ItemKNN.
+This combines several scores:
+
+- behavior score,
+- content score,
+- popularity score,
+- novelty score.
+
+The goal is not to worship one model. The goal is to build a ranked list that is
+useful and not too narrow.
 
 ### Two-Stage Hybrid Ranker
 
-Stage 1 retrieves top-200 candidates from BPR, ALS, and ItemKNN. Stage 2
-re-ranks the union using:
+This is the main system.
+
+Stage 1 pulls a smaller pool of candidates. It uses BPR, ALS, and ItemKNN to
+collect up to 200 possible items.
+
+Stage 2 re-ranks that pool with:
 
 - BPR score,
 - ALS score,
 - ItemKNN score,
 - content score,
 - popularity score,
-- novelty / long-tail signal.
+- novelty / long-tail score.
 
-Purpose:
-
-- separates candidate generation from ranking,
-- mirrors real content-discovery system architecture,
-- balances personalization with metadata, popularity, and novelty information,
-- reduces dependence on a single model family.
+This shape is closer to real recommendation systems. First get a good shortlist.
+Then spend more care sorting it.
 
 ## Validation Tuning
 
-The ranker weight grid is tuned on the validation holdout. The final test set is
-not used for weight selection.
+The hybrid weights are tuned on validation, not on the final test set.
 
-The selected validation configuration in the latest run is `content_safety` for
-all three seeds:
+The latest run selected this weight mix for all three seeds:
 
-- BPR: 0.20,
-- ALS: 0.20,
-- ItemKNN: 0.15,
-- content: 0.25,
-- popularity: 0.05,
-- novelty: 0.15.
+| Signal | Weight |
+|---|---:|
+| BPR | 0.20 |
+| ALS | 0.20 |
+| ItemKNN | 0.15 |
+| Content | 0.25 |
+| Popularity | 0.05 |
+| Novelty | 0.15 |
 
-## Evaluation
+The selected setup is saved in:
 
-The project reports:
+`outputs/metrics/selected_ranker_weights.csv`
 
-- Precision@10,
+## What Gets Measured
+
+The pipeline reports:
+
 - Recall@10,
-- MAP@10,
 - NDCG@10,
+- MAP@10,
 - catalog coverage,
 - long-tail share,
-- intra-list diversity,
-- average genre diversity,
-- Gini recommendation concentration,
-- sampled 100-negative HitRate@10 and NDCG@10,
-- cold-item fallback results,
-- mean and standard deviation across three seeds,
-- sample top-K recommendation output.
+- genre diversity,
+- recommendation concentration,
+- sampled 100-negative metrics,
+- cold-item fallback metrics,
+- mean and standard deviation across 3 seeds.
 
-## Product Lens
+## Product View
 
-Offline metrics are necessary but incomplete. A production content-discovery
-system would also monitor:
+Offline metrics are not the whole story.
+
+For a real app, the next checks would include:
 
 - click-through rate,
-- read/listen start rate,
+- start-reading rate,
 - completion depth,
-- saves/follows,
+- saves and follows,
 - repeat sessions,
-- creator/content coverage,
-- retention,
-- complaint or hide signals.
+- creator coverage,
+- user complaints, hides, or skips.
+
+This repo stops at offline benchmark proof. It does not claim live product
+impact.

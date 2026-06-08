@@ -1,68 +1,100 @@
 # Evaluation
 
-## Offline Ranking Task
+This file explains how the project checks whether the recommender is doing
+anything useful.
 
-Each eligible user contributes two held-out positive items:
+## The Main Test
 
-- validation item: second-latest positive interaction,
-- test item: latest positive interaction.
+Each test user has one hidden liked item.
 
-Models score all catalog items not already seen in the user's training history.
-The goal is to rank the held-out item in the top-K list.
+The model gets the user's older liked items, then ranks the catalog. If the
+hidden item appears near the top, the model gets credit.
 
-## Metrics
+That is why the main metrics use `@10`: we care about the first 10 items shown
+to the user.
 
-| Metric | Meaning |
+## Metrics In Plain English
+
+| Metric | What it means |
 |---|---|
-| `Precision@10` | Fraction of top-10 recommendations that match the held-out item |
-| `Recall@10` | Fraction of held-out items recovered in top 10 |
-| `MAP@10` | Mean average precision at 10; rewards higher rank positions |
-| `NDCG@10` | Discounted gain; rewards hits near the top |
-| `Catalog Coverage@10` | Fraction of all items that appear in at least one top-10 list |
-| `Long-tail Share@10` | Fraction of recommendations from outside the top popularity head |
-| `Intra-list Diversity@10` | Average genre dissimilarity inside each recommendation list |
-| `Average Distinct Genres@10` | Number of genres represented in each recommendation list |
-| `Gini Index@10` | Recommendation concentration; lower is more evenly distributed |
+| `Recall@10` | Did the hidden liked item show up in the top 10? |
+| `Precision@10` | How much of the top 10 is known to be relevant? This is small here because each user has only one hidden positive item. |
+| `MAP@10` | Gives more credit when the hit appears higher in the list. |
+| `NDCG@10` | Also rewards hits near the top. |
+| `Catalog Coverage@10` | How much of the catalog appears across users' top-10 lists. |
+| `Long-tail Share@10` | How often the model recommends less popular items. |
+| `Intra-list Diversity@10` | Whether one user's list has variety instead of ten near-copies. |
+| `Average Distinct Genres@10` | How many genre labels show up in a user's top-10 list. |
+| `Gini Index@10` | Whether recommendations are concentrated on a small set of items. Lower is usually less concentrated. |
 
-With one held-out positive item per user, `Recall@10` is the clearest main
-metric. `Precision@10` will be numerically smaller because only one relevant
-item is known per user.
+## How To Read The Main Numbers
 
-## Interpretation Rules
+Popularity is the easy baseline. It recommends famous items and often gets some
+hits, but it usually covers very little of the catalog.
 
-- Popularity can perform well but usually has low catalog coverage.
-- Content-based scoring can improve cold-start interpretability but may miss
-  behavior patterns.
-- ItemKNN is a strong collaborative baseline for user-item histories.
-- BPR and ALS check embedding-based collaborative behavior.
-- Hybrid rankers are preferred when they improve ranking quality without
-  collapsing coverage.
+The two-stage ranker is stronger on the main goal:
 
-## Validation And Seed Variance
+- popularity Recall@10: `0.0399`
+- two-stage Recall@10: `0.0584 +/- 0.0007`
 
-The ranker is tuned on validation and reported on test. The main model table
-reports mean and standard deviation across seeds 11, 42, and 73.
+It also spreads recommendations across more items:
 
-## Sampled-Negative Evaluation
+- popularity Coverage@10: `2.96%`
+- two-stage Coverage@10: `23.65% +/- 1.33%`
 
-The project also reports a sampled 100-negative task. For each user, the heldout
-positive item is ranked against 100 sampled negatives. This is easier than
-all-item ranking and should be interpreted as a diagnostic metric, not a
-replacement for all-item Recall@10.
+That coverage jump is the strongest discovery angle in this project.
 
-## Cold-Start Evaluation
+## Seed Variance
 
-The cold-start experiment hides low-interaction items from collaborative
-training, then evaluates fallback scores on users whose test item is one of
-those hidden low-interaction items.
+The project runs three seeds: `11`, `42`, and `73`.
 
-The compared fallback strategies are:
+Why bother?
 
-- popularity fallback,
-- content fallback,
-- hybrid content/novelty fallback.
+Because a recommender can look good by luck. Running more than one seed gives a
+basic check that the result is not just one lucky training run.
 
-## Business Metric Boundary
+## Sampled 100-Negative Test
 
-Offline metrics do not prove conversion, retention, or revenue impact. Those
-claims require online A/B testing and product telemetry.
+This is a second, easier test.
+
+For each user, the model ranks:
+
+- one hidden liked item,
+- 100 sampled negative items.
+
+ItemKNN does best here:
+
+- HitRate@10: `0.6154 +/- 0.0018`
+- NDCG@10: `0.3466 +/- 0.0009`
+
+Do not mix this with all-item ranking. Ranking against 100 sampled negatives is
+much easier than ranking against the whole catalog.
+
+## Cold-Start Test
+
+Cold start means the system has weak behavior data for some items.
+
+This project hides 894 low-interaction items from collaborative training. Then
+it checks whether fallback signals can still recover some of those hidden items.
+
+Results:
+
+- popularity fallback NDCG@10: `0.0000`
+- content fallback NDCG@10: `0.0068`
+- hybrid fallback NDCG@10: `0.0299`
+
+This does not prove a production cold-start system. It does show that content
+and novelty signals help when pure popularity has no useful answer.
+
+## Business Claim Boundary
+
+Offline metrics do not prove:
+
+- conversion lift,
+- retention lift,
+- revenue impact,
+- better user satisfaction,
+- live production performance.
+
+Those need product logs and online experiments. This repo stays inside offline
+benchmark evaluation.

@@ -1,6 +1,12 @@
 # Final Report
 
-## Dataset Summary
+This report is the short proof file for the project.
+
+The goal was not to make a flashy demo. The goal was to build a recommender
+pipeline, compare it against real baselines, and keep the claims tied to output
+files.
+
+## Dataset
 
 | Metric | Value |
 |---|---:|
@@ -11,22 +17,23 @@
 | Positive interactions | 575,281 |
 | Training positives | 563,211 |
 | Validation users | 6,035 |
-| Evaluation users | 6,035 |
+| Test users | 6,035 |
 | User-item matrix sparsity | 95.7353% |
 | Seeds | 11, 42, 73 |
 | Candidate retrieval depth | 200 |
 | Sampled negatives | 100 |
 
-## Split Design
+MovieLens users are anonymous benchmark users. They are not Pratilipi users.
 
-For every user with at least three positive interactions:
+## Split
 
-- train uses all positive interactions except the latest two,
-- validation uses the second-latest positive item,
-- test uses the latest positive item.
+For each user with enough positive history:
 
-Ranker weights are selected on validation. Final numbers below are test-set
-means and standard deviations across seeds.
+- older liked items are used for training,
+- the second-latest liked item is used for validation,
+- the latest liked item is used for final testing.
+
+The ranker is tuned on validation. The final numbers below are test numbers.
 
 ## All-Item Model Comparison
 
@@ -40,12 +47,34 @@ means and standard deviations across seeds.
 | content_based | 0.0149 | 0.0000 | 0.0066 | 0.0000 | 0.0042 | 0.7247 | 0.7412 | 0.8531 |
 | implicit_als | 0.0021 | 0.0006 | 0.0009 | 0.0002 | 0.0005 | 0.1945 | 0.9998 | 0.9694 |
 
-## Best Offline Model
+The two-stage hybrid ranker is the best model by all-item Recall@10.
 
-The best all-item model by mean Recall@10, then mean NDCG@10, is
-`two_stage_hybrid_ranker`.
+ItemKNN has slightly higher NDCG@10, so the honest statement is:
 
-## Sampled 100-Negative Evaluation
+> The two-stage ranker wins on Recall@10 and coverage. ItemKNN is slightly
+> better on NDCG@10 in this run.
+
+That distinction matters.
+
+## Main Takeaway
+
+Popularity baseline:
+
+- Recall@10: `0.0399`
+- Coverage@10: `2.96%`
+
+Two-stage hybrid ranker:
+
+- Recall@10: `0.0584 +/- 0.0007`
+- Coverage@10: `23.65% +/- 1.33%`
+
+The two-stage ranker found more held-out liked items and used a much wider slice
+of the catalog.
+
+## Sampled 100-Negative Check
+
+This is an easier test: one hidden liked item is ranked against 100 sampled
+negative items.
 
 | model | seeds | evaluated_users | sampled_negatives | hit_rate_at_10_mean | hit_rate_at_10_std | map_at_10_mean | map_at_10_std | ndcg_at_10_mean | ndcg_at_10_std |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -57,11 +86,13 @@ The best all-item model by mean Recall@10, then mean NDCG@10, is
 | content_based | 3 | 6035 | 100 | 0.2846 | 0.0006 | 0.1430 | 0.0009 | 0.1757 | 0.0007 |
 | implicit_als | 3 | 6035 | 100 | 0.2139 | 0.0700 | 0.0542 | 0.0182 | 0.0905 | 0.0301 |
 
-This is an easier diagnostic task than all-item ranking because each user has
-one held-out positive item plus 100 sampled negatives. It should not be mixed
-with all-item Recall@10 or NDCG@10.
+This table should not be mixed with all-item ranking. The candidate set is much
+smaller here.
 
-## Cold-Start Experiment
+## Cold-Start Check
+
+This test hides low-interaction items from collaborative training, then checks
+fallback behavior.
 
 | model | evaluated_users | precision_at_10 | recall_at_10 | map_at_10 | ndcg_at_10 | catalog_coverage_at_10 | unique_recommended_items | avg_distinct_genres_at_10 | long_tail_share_at_10 | intra_list_diversity_at_10 | gini_index_at_10 | cold_items_hidden_from_collaborative_training | cold_item_popularity_cutoff |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -69,31 +100,34 @@ with all-item Recall@10 or NDCG@10.
 | cold_content_fallback | 131 | 0.0023 | 0.0229 | 0.0025 | 0.0068 | 0.1471 | 571 | 3.5649 | 0.7565 | 0.0827 | 0.9204 | 894 | 12 |
 | cold_hybrid_fallback | 131 | 0.0076 | 0.0763 | 0.0161 | 0.0299 | 0.1136 | 441 | 3.2519 | 0.9947 | 0.1019 | 0.9468 | 894 | 12 |
 
-The cold-start experiment hides low-interaction items from collaborative
-training, then compares fallback behavior. A percentage lift over popularity is
-not reported when popularity scores zero.
+The hybrid fallback is strongest in this cold-item setup.
 
-## Interpretation
+I do not report percentage lift over popularity because popularity got zero
+NDCG@10. A percentage lift from zero would be a bad claim.
 
-The popularity baseline is a useful lower bound because it measures how much
-recommendation quality can be achieved without personalization. ItemKNN and BPR
-capture behavior similarity. Content-based scoring adds metadata awareness and
-helps cold-start cases. The two-stage ranker retrieves candidates with behavior
-models, then re-ranks with collaborative, content, popularity, and novelty
-signals.
+## Product Reading
 
-## Product Mapping
+For a reading app, the same pieces would look like this:
 
-For a platform like Pratilipi, the same structure maps to reader-story
-recommendations:
-
-- users become readers or listeners,
-- items become stories, authors, comics, or audio content,
-- genres become language, theme, format, and category features,
-- batch top-K scoring becomes personalized homepage or feed refresh,
-- offline metrics become pre-launch checks before online experimentation.
+- users become readers,
+- movies become stories, comics, books, or audio episodes,
+- genres become language, topic, format, mood, or author type,
+- ratings become reads, saves, follows, reviews, skips, and completion signals,
+- batch scoring becomes refreshed homepage or feed recommendations.
 
 ## Claim Boundary
 
-The reported numbers are offline benchmark metrics. They do not claim conversion,
-retention, revenue, or production impact.
+Safe claim:
+
+> Built a two-stage MovieLens-1M recommender with validation tuning, multiple
+> baselines, 3-seed test reporting, sampled-negative evaluation, and cold-item
+> fallback analysis.
+
+Unsafe claims:
+
+- used Pratilipi data,
+- served live users,
+- improved conversion,
+- improved retention,
+- improved revenue,
+- ran an online A/B test.

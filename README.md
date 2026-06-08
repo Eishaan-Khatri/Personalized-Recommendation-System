@@ -1,74 +1,135 @@
 # Personalized Recommendation System
 
-Two-stage recommendation and discovery pipeline using ItemKNN, BPR matrix
-factorization, implicit ALS, content features, hybrid re-ranking, validation
-tuning, seed variance, cold-start analysis, and batch recommendation generation.
+This project is a small recommendation lab built around one simple question:
 
-## Problem
+**If a user liked some items before, can we guess what they may like next?**
 
-Content platforms need to match each reader with relevant items from a large
-catalog. A useful recommender should not only surface popular content; it should
-model user-item behavior, item attributes, cold-start constraints, and discovery
-quality.
+That is the same basic problem behind movie apps, shopping feeds, music apps,
+and reading platforms. Pratilipi has its own version of it: readers need stories
+worth opening, and the platform has to choose from a very large catalog.
 
-This project builds an offline recommendation pipeline over the MovieLens 1M
-benchmark dataset and maps the same design to content-discovery products such as
-Pratilipi, where users discover stories, authors, genres, languages, and formats.
+This repo does not use Pratilipi data. It uses the public MovieLens 1M dataset,
+then builds the kind of pipeline a content app would need: candidate retrieval,
+ranking, cold-start fallback, batch scoring, and clear offline metrics.
 
-## What The Project Demonstrates
+## The Problem
 
-- user-item interaction modeling over a 1M+ interaction benchmark,
-- popularity, content-based, ItemKNN, BPR, ALS, and hybrid recommendation approaches,
-- validation tuning before final test reporting,
-- 3-seed repeated runs with mean and standard deviation,
-- holdout evaluation with ranking metrics such as Precision@K, Recall@K,
-  MAP@K, and NDCG@K,
-- discovery metrics including catalog coverage, long-tail share, intra-list
-  diversity, average genre diversity, and Gini concentration,
-- sampled 100-negative recommender evaluation,
-- low-interaction cold-item fallback analysis,
-- batch top-K recommendation generation,
-- product reasoning for personalization, recommendations, and discovery.
+Popularity is easy. Recommend the same famous items to everyone and the system
+will look decent for a while.
 
-## Measured Results
+But that gets boring fast.
 
-The full pipeline was run on MovieLens 1M with a validation/test split:
+A better recommender has to ask more useful questions:
 
-- train: all except each eligible user's last two positive interactions,
-- validation: second-latest positive interaction,
-- test: latest positive interaction.
+- What has this user liked before?
+- Which items are similar because of behavior, not just tags?
+- Can new or less popular items still get a chance?
+- Are we recommending from the whole catalog, or only from the same tiny group
+  of popular items?
+- Did the model get better on a real test split, or did it just memorize the
+  past?
 
-Final numbers below are test-set means across 3 seeds.
+This project answers those questions with a reproducible benchmark.
 
-| Metric | Value |
+## A Simple Example
+
+Fictional example, not a real user:
+
+> Riya reads mystery and romance stories late at night. She sometimes tries
+> comedy, but rarely finishes it. A good recommender should not only show her
+> the most popular story on the app. It should find stories close to her taste,
+> leave room for a fresh author, and avoid repeating the same kind of item every
+> time.
+
+MovieLens has movies instead of stories, but the shape of the problem is close:
+users, items, past behavior, item tags, and a ranked list of suggestions.
+
+## What I Built
+
+The pipeline compares several recommenders instead of trusting one model:
+
+1. **Popularity baseline**: recommends items many users liked.
+2. **Content-based model**: uses item genres.
+3. **ItemKNN**: finds items liked by similar users.
+4. **BPR matrix factorization**: learns user and item embeddings.
+5. **Implicit ALS**: adds a second embedding-style baseline.
+6. **Hybrid score blend**: mixes behavior, content, popularity, and novelty.
+7. **Two-stage hybrid ranker**: pulls top-200 candidates first, then re-ranks
+   them with several signals.
+
+The two-stage setup matters because real recommendation systems usually do not
+rank every item from scratch. They first collect a smaller pool of likely items,
+then spend more care ordering that pool.
+
+## Data Used
+
+| Item | Value |
 |---|---:|
+| Dataset | MovieLens 1M |
 | Ratings processed | 1,000,209 |
-| Users | 6,040 |
+| Anonymous users | 6,040 |
 | Catalog items | 3,883 |
 | Rated items | 3,706 |
 | Positive interactions | 575,281 |
 | Training positive interactions | 563,211 |
 | Validation users | 6,035 |
-| Evaluation users | 6,035 |
-| User-item matrix sparsity | 95.7353% |
+| Test users | 6,035 |
 | Candidate retrieval depth | top-200 |
 | Seeds | 11, 42, 73 |
-| Best all-item model | Two-stage hybrid ranker |
-| Recall@10 mean +/- std | 0.0584 +/- 0.0007 |
-| NDCG@10 mean +/- std | 0.0283 +/- 0.0004 |
-| MAP@10 mean +/- std | 0.0194 +/- 0.0003 |
-| Catalog Coverage@10 mean +/- std | 23.65% +/- 1.33% |
-| Sampled 100-negative best HitRate@10 | 0.6154 +/- 0.0018 |
-| Cold-item hybrid fallback NDCG@10 | 0.0299 |
 
-The two-stage hybrid ranker improved all-item Recall@10 over the popularity
-baseline from 0.0399 to 0.0584 and expanded Catalog Coverage@10 from 2.96% to
-23.65%. The sampled 100-negative evaluation is reported separately because it is
-an easier candidate-set task and should not be mixed with all-item metrics.
+Ratings of 4 or 5 are treated as positive interactions.
 
-## Generated Outputs
+## How The Test Works
 
-The pipeline writes measured artifacts to:
+For each user with enough positive history:
+
+- training gets the older liked items,
+- validation gets the second-latest liked item,
+- test gets the latest liked item.
+
+The model tunes on validation, then reports final numbers on test.
+
+That matters. Without validation, it is too easy to tune directly on the final
+answer sheet.
+
+## Main Results
+
+These numbers come from `outputs/metrics/model_comparison.csv`.
+
+| Model | Recall@10 | NDCG@10 | MAP@10 | Coverage@10 | Long-tail@10 |
+|---|---:|---:|---:|---:|---:|
+| Two-stage hybrid ranker | 0.0584 +/- 0.0007 | 0.0283 +/- 0.0004 | 0.0194 +/- 0.0003 | 0.2365 +/- 0.0133 | 0.0132 +/- 0.0018 |
+| Hybrid score blend | 0.0583 +/- 0.0006 | 0.0283 +/- 0.0004 | 0.0193 +/- 0.0003 | 0.2316 +/- 0.0123 | 0.0137 +/- 0.0018 |
+| ItemKNN | 0.0580 +/- 0.0000 | 0.0287 +/- 0.0000 | 0.0199 +/- 0.0000 | 0.0901 +/- 0.0000 | 0.0009 +/- 0.0000 |
+| Popularity | 0.0399 +/- 0.0000 | 0.0188 +/- 0.0000 | 0.0126 +/- 0.0000 | 0.0296 +/- 0.0000 | 0.0000 +/- 0.0000 |
+| BPR matrix factorization | 0.0389 +/- 0.0014 | 0.0177 +/- 0.0007 | 0.0115 +/- 0.0006 | 0.2028 +/- 0.0233 | 0.0129 +/- 0.0023 |
+| Content-based | 0.0149 +/- 0.0000 | 0.0066 +/- 0.0000 | 0.0042 +/- 0.0000 | 0.7247 +/- 0.0000 | 0.7412 +/- 0.0000 |
+| Implicit ALS | 0.0021 +/- 0.0006 | 0.0009 +/- 0.0002 | 0.0005 +/- 0.0001 | 0.1945 +/- 0.0234 | 0.9998 +/- 0.0002 |
+
+The cleanest result:
+
+- popularity Recall@10: **0.0399**
+- two-stage Recall@10: **0.0584 +/- 0.0007**
+- popularity Coverage@10: **2.96%**
+- two-stage Coverage@10: **23.65% +/- 1.33%**
+
+So the hybrid ranker did two useful things at once: it found more held-out liked
+items, and it recommended from a wider part of the catalog.
+
+## Extra Checks
+
+The repo also includes two checks that many small recommender projects skip.
+
+| Check | Result | Why it matters |
+|---|---:|---|
+| Sampled 100-negative HitRate@10 | 0.6154 +/- 0.0018 | Easier diagnostic task; ItemKNN was best here. |
+| Sampled 100-negative NDCG@10 | 0.3466 +/- 0.0009 | Kept separate from all-item ranking. |
+| Cold-item hybrid fallback Recall@10 | 0.0763 | Tests low-interaction items hidden from collaborative training. |
+| Cold-item hybrid fallback NDCG@10 | 0.0299 | Popularity fallback scored 0.0000 in this cold-item setup. |
+
+## Output Files
+
+The numbers are not hand-written. They are stored in:
 
 - `outputs/metrics/model_comparison.csv`
 - `outputs/metrics/seed_metrics.csv`
@@ -82,79 +143,37 @@ The pipeline writes measured artifacts to:
 - `outputs/recommendations/sample_user_recommendations.csv`
 - `reports/final_report.md`
 
-## Repository Map
+## Why This Fits Pratilipi-Style Work
 
-| Path | Purpose |
-|---|---|
-| `src/` | Reusable data, modeling, evaluation, and batch scoring modules |
-| `docs/` | Data dictionary, methodology, evaluation notes, and Pratilipi mapping |
-| `notebooks/` | Notebook entry points for exploration and explanation |
-| `outputs/` | Generated metrics and sample recommendations |
-| `reports/` | Final project report |
+For Pratilipi, replace:
 
-## Methods
+- MovieLens users with readers,
+- movies with stories, comics, books, or audio episodes,
+- genres with language, theme, format, author, and category,
+- ratings with reads, saves, follows, completion, skips, and reviews.
 
-The project is built around seven recommender variants:
+The same system shape still holds: learn from behavior, use item metadata, pull
+candidate items, rank them, and check if the list is both relevant and broad
+enough.
 
-1. Popularity baseline.
-2. Content-based user profile scoring from item metadata.
-3. Collaborative ItemKNN.
-4. BPR matrix factorization.
-5. Implicit ALS.
-6. Hybrid all-item score blend.
-7. Two-stage hybrid ranker: retrieve top-200 candidates with BPR, ALS, and
-   ItemKNN; re-rank with collaborative, content, popularity, and novelty signals.
+## What I Am Not Claiming
 
-## Model Comparison
+This project does **not** claim:
 
-| Model | Recall@10 | NDCG@10 | MAP@10 | Coverage@10 | Long-tail@10 |
-|---|---:|---:|---:|---:|---:|
-| Two-stage hybrid ranker | 0.0584 +/- 0.0007 | 0.0283 +/- 0.0004 | 0.0194 +/- 0.0003 | 0.2365 +/- 0.0133 | 0.0132 +/- 0.0018 |
-| Hybrid score blend | 0.0583 +/- 0.0006 | 0.0283 +/- 0.0004 | 0.0193 +/- 0.0003 | 0.2316 +/- 0.0123 | 0.0137 +/- 0.0018 |
-| ItemKNN | 0.0580 +/- 0.0000 | 0.0287 +/- 0.0000 | 0.0199 +/- 0.0000 | 0.0901 +/- 0.0000 | 0.0009 +/- 0.0000 |
-| Popularity | 0.0399 +/- 0.0000 | 0.0188 +/- 0.0000 | 0.0126 +/- 0.0000 | 0.0296 +/- 0.0000 | 0.0000 +/- 0.0000 |
-| BPR matrix factorization | 0.0389 +/- 0.0014 | 0.0177 +/- 0.0007 | 0.0115 +/- 0.0006 | 0.2028 +/- 0.0233 | 0.0129 +/- 0.0023 |
-| Content-based | 0.0149 +/- 0.0000 | 0.0066 +/- 0.0000 | 0.0042 +/- 0.0000 | 0.7247 +/- 0.0000 | 0.7412 +/- 0.0000 |
-| Implicit ALS | 0.0021 +/- 0.0006 | 0.0009 +/- 0.0002 | 0.0005 +/- 0.0001 | 0.1945 +/- 0.0234 | 0.9998 +/- 0.0002 |
+- Pratilipi private data,
+- live users,
+- production deployment,
+- conversion lift,
+- retention lift,
+- revenue impact,
+- A/B test results.
 
-## Cold-Start And Sampled-Negative Checks
-
-| Experiment | Best result | Interpretation |
-|---|---:|---|
-| Sampled 100-negative HitRate@10 | 0.6154 +/- 0.0018 | ItemKNN was strongest when each user had one positive plus 100 sampled negatives. |
-| Sampled 100-negative NDCG@10 | 0.3466 +/- 0.0009 | Sampled-negative metrics are easier than all-item ranking and are reported separately. |
-| Cold-item hybrid fallback Recall@10 | 0.0763 | Hybrid content/novelty fallback recovered hidden low-interaction items better than popularity. |
-| Cold-item hybrid fallback NDCG@10 | 0.0299 | Popularity fallback scored 0.0000 NDCG@10 after cold items were hidden. |
-
-## Pratilipi Relevance
-
-The project is shaped for personalisation, recommendations, and discovery work:
-
-- reader behavior maps to user-item interactions,
-- stories map to catalog items,
-- genres/languages/themes map to item metadata,
-- candidate generation maps to large-catalog retrieval,
-- ranking maps to homepage/feed ordering,
-- batch scoring maps to periodic recommendation refresh.
-
-See `docs/PRATILIPI_DISCOVERY_MAPPING.md` for the detailed product mapping.
-
-## Limitations
-
-This is an offline benchmark project. It does not use private Pratilipi data,
-does not claim production deployment, and does not claim conversion or retention
-lift. Business metrics require real online experiments and product telemetry.
-
-## Safe Resume Claim
-
-Built a hybrid recommendation pipeline over a 1M+ interaction benchmark dataset,
-using ItemKNN, BPR/ALS candidate generation, validation-tuned hybrid re-ranking,
-3-seed offline evaluation, sampled-negative checks, and cold-item fallback
-analysis over 6,035 evaluated users.
+Those claims would need real product logs and online experiments. This repo is
+an offline recommender benchmark with honest numbers.
 
 ## Quick Start
 
-Install the lightweight dependencies:
+Install dependencies:
 
 ```bash
 pip install -r requirements.txt

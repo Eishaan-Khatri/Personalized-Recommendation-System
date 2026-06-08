@@ -1,51 +1,73 @@
 # Data Dictionary
 
-## Dataset
+This file explains the data in plain language.
 
-MovieLens 1M is used as the public benchmark dataset because it provides a
-large user-item interaction table and item metadata.
+The project uses **MovieLens 1M**, a public movie-rating dataset. It is useful
+because it has the same basic pieces a recommender needs:
 
-The local raw files contain 3,883 catalog item rows in `movies.dat`; 3,706 of
-those items appear in `ratings.dat`. The recommender scores the full catalog and
-learns interaction signals from rated items.
+- users,
+- items,
+- past actions,
+- item tags,
+- timestamps.
 
-## Tables
+It is not Pratilipi data.
 
-### Ratings
+## Dataset Size
 
-| Field | Type | Meaning |
+| Field | Value |
+|---|---:|
+| Rating rows | 1,000,209 |
+| Users | 6,040 |
+| Movie rows in catalog | 3,883 |
+| Movies with at least one rating | 3,706 |
+| Positive ratings used by the recommender | 575,281 |
+
+The recommender treats ratings of 4 or 5 as positive. In simple words: the user
+liked that item enough for it to count as a useful signal.
+
+## Ratings Table
+
+| Field | Type | Plain meaning |
 |---|---|---|
-| `user_id` | integer | Original MovieLens user identifier |
-| `item_id` | integer | Original MovieLens movie identifier |
-| `rating` | integer | Explicit user rating from 1 to 5 |
-| `timestamp` | integer | Unix timestamp of the rating event |
-| `user_idx` | integer | Internal contiguous user index |
-| `item_idx` | integer | Internal contiguous item index |
-| `is_positive` | boolean | `rating >= 4` |
+| `user_id` | integer | Original anonymous MovieLens user ID |
+| `item_id` | integer | Original MovieLens movie ID |
+| `rating` | integer | Star rating from 1 to 5 |
+| `timestamp` | integer | When the rating happened |
+| `user_idx` | integer | Clean internal user number used by the code |
+| `item_idx` | integer | Clean internal item number used by the code |
+| `is_positive` | boolean | True when `rating >= 4` |
 
-### Items
+## Items Table
 
-| Field | Type | Meaning |
+| Field | Type | Plain meaning |
 |---|---|---|
-| `item_id` | integer | Original MovieLens movie identifier |
+| `item_id` | integer | Original MovieLens movie ID |
 | `title` | string | Movie title |
-| `genres` | string | Pipe-separated genre labels |
-| `item_idx` | integer | Internal contiguous item index |
+| `genres` | string | Movie genres, split by `|` |
+| `item_idx` | integer | Clean internal item number used by the code |
 
-### Item Genre Features
+## Genre Features
 
-Each genre becomes a binary feature. These features are used by the content-based
-recommender and hybrid model.
+Each genre becomes a yes/no feature. For example, a movie can be marked as:
 
-## Pratilipi Mapping
+- action,
+- comedy,
+- drama,
+- romance.
 
-| MovieLens Field | Content Platform Equivalent |
+The content-based model uses these tags to ask: "Has this user liked items with
+similar tags before?"
+
+## How This Maps To A Reading App
+
+| MovieLens field | Reading-platform version |
 |---|---|
-| `user_id` | reader identifier |
-| `item_id` | story/book/comic/audio item |
-| `rating` | read, like, save, follow, completion, or review signal |
-| `genres` | language, genre, theme, format, author category |
-| `timestamp` | reading/listening session time |
+| `user_id` | reader ID |
+| `item_id` | story, book, comic, audio episode, or author page |
+| `rating` | read, like, save, follow, finish, skip, or review |
+| `genres` | language, theme, format, author type, mood, or category |
+| `timestamp` | reading or listening time |
 
-The benchmark is not Pratilipi data. It is used to demonstrate recommender
-system design on a public dataset.
+The data is different, but the recommender problem is similar: use past behavior
+to rank the next set of items.

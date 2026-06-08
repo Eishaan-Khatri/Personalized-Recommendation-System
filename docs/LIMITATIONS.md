@@ -1,69 +1,103 @@
 # Limitations
 
-## Data
+This file is here so the project does not sound bigger than it is.
 
-The project uses MovieLens 1M, not private platform data. Movie ratings are a
-useful benchmark for recommender systems but do not fully represent story
-reading behavior.
+The work is useful. It is not production proof.
 
-## Feedback
+## The Data Is Public Movie Data
 
-Ratings are explicit feedback. Real content platforms rely heavily on implicit
-signals such as reads, dwell time, completion, follows, saves, skips, and session
-continuity.
+The project uses MovieLens 1M.
 
-## Offline Evaluation
+That means:
 
-Offline ranking metrics do not prove business impact. Conversion, retention, and
-engagement improvements require online controlled experiments.
+- the users are anonymous MovieLens users,
+- the items are movies,
+- the actions are star ratings.
 
-## Model Scope
+It is not Pratilipi data. It is not private app data. It does not contain real
+reader sessions, story opens, follows, saves, or completion depth.
 
-The implemented models are intentionally explainable and lightweight:
+## Ratings Are Cleaner Than Real Behavior
 
-- popularity baseline,
+A 5-star rating is easy to read: the user liked the movie.
+
+Real product signals are messier. A reader may open a story, leave after 20
+seconds, come back later, save it, skip it, or follow the author. Those actions
+are richer, but also harder to model cleanly.
+
+This project keeps the first version honest by using a public dataset.
+
+## Offline Metrics Are Not Business Metrics
+
+Recall@10 and NDCG@10 are useful checks.
+
+They do not prove that users would:
+
+- read more,
+- stay longer,
+- spend money,
+- return tomorrow,
+- follow more authors.
+
+Those claims need online testing.
+
+## The Models Are Deliberately Lightweight
+
+The repo uses models that are easy to inspect:
+
+- popularity,
 - content-based scoring,
 - ItemKNN,
 - BPR matrix factorization,
 - implicit ALS,
-- two-stage hybrid re-ranking,
-- validation tuning,
-- sampled-negative evaluation,
-- cold-start fallback analysis.
+- hybrid re-ranking.
 
-Deep sequence models, graph neural recommenders, approximate nearest-neighbor
-serving, and real-time feature pipelines are natural future extensions but are
-not required for the core proof.
+It does not include:
 
-## Metric Caveats
+- deep sequence recommenders,
+- graph neural networks,
+- real-time feature stores,
+- approximate nearest-neighbor serving,
+- online A/B testing.
 
-All-item Recall@10 and sampled-negative HitRate@10 are not comparable. The
-sampled-negative task is easier because each user has one positive and only 100
-sampled negatives. The README reports both but keeps them separate.
+Those would be good next steps, but they are not needed to show the core
+recommendation workflow.
 
-Cold-start percentage lift is not reported when the popularity fallback has a
-zero score. In that case, absolute Recall@10 and NDCG@10 are the defensible
-numbers.
+## Sampled Metrics Need Care
 
-## Responsible Claiming
+The sampled 100-negative test is useful, but easier than the all-item test.
 
-Safe claims:
+It ranks one hidden liked item against 100 sampled negative items. The all-item
+test ranks against the full catalog.
 
-- benchmark dataset scale,
-- validation/test split design,
-- mean and standard deviation across repeated seeds,
-- measured offline ranking metrics,
-- sampled-negative diagnostic metrics,
-- cold-start fallback metrics,
-- generated recommendation outputs,
-- implemented model families,
-- documented product mapping.
+So these two numbers should not be compared directly.
 
-Unsafe claims without additional evidence:
+## Cold-Start Lift Needs Care
 
-- real conversion lift,
-- real retention lift,
-- production deployment,
-- private Pratilipi data usage,
-- live user impact,
-- causal A/B test results.
+In the cold-start experiment, popularity fallback gets zero NDCG@10.
+
+Because of that, I do not report a percentage lift over popularity. A percentage
+lift from zero would be misleading. The safer numbers are the absolute Recall@10
+and NDCG@10 values.
+
+## Safe Claims
+
+Safe:
+
+- built a two-stage recommender,
+- used MovieLens 1M,
+- compared multiple baselines,
+- tuned on validation,
+- reported 3-seed test results,
+- added sampled-negative and cold-start checks,
+- generated batch recommendation outputs.
+
+Not safe:
+
+- used Pratilipi data,
+- served live users,
+- improved retention,
+- improved conversion,
+- improved revenue,
+- ran an A/B test,
+- deployed a production recommender.

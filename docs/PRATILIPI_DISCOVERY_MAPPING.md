@@ -1,49 +1,63 @@
 # Pratilipi Discovery Mapping
 
-This project is designed to be readable for roles focused on personalisation,
-recommendations, and discovery.
+This project is not a Pratilipi clone.
 
-## Domain Translation
+It is a public-data recommender project that uses the same basic building
+blocks a reading platform would care about: users, items, behavior, item
+metadata, ranking, and catalog coverage.
 
-| Recommender Concept | Pratilipi-Style Equivalent |
+## Simple Fictional Example
+
+Fictional example, not a real Pratilipi user:
+
+> Aarav mostly reads Hindi crime stories. He sometimes tries short romance
+> stories, but he skips long fantasy series. A useful homepage should not show
+> him only the most popular story on the platform. It should mix strong matches,
+> a few fresh items, and maybe a new author close to his taste.
+
+That is what this project is trying to model in benchmark form.
+
+## Translation Table
+
+| Recommender term | Pratilipi-style version |
 |---|---|
 | user | reader or listener |
-| item | story, book, comic, audio episode, podcast, author page |
-| rating | read, like, save, follow, complete, review, share |
-| genre | language, theme, category, format, mood, topic |
-| candidate generation | finding possible stories from a large catalog |
-| ranking | ordering homepage/feed/search/similar-story results |
-| batch scoring | daily or hourly refresh of recommendation lists |
-| cold start | new reader, new story, new author, new language/category |
+| item | story, book, comic, audio episode, podcast, or author page |
+| rating | read, save, like, finish, follow, review, skip, or share |
+| genre | language, theme, format, topic, mood, or category |
+| candidate generation | finding a smaller set of possible stories from a large catalog |
+| ranking | ordering homepage, feed, search, or similar-story results |
+| batch scoring | refreshing recommendation lists every few hours or every day |
+| cold start | new reader, new story, new author, or new language/category |
 
-## Discovery Surfaces
+## Where This Would Show Up In A Product
 
-The same pipeline can support:
+A similar system shape could support:
 
-- personalized homepage recommendations,
-- similar-story recommendations,
-- author and creator discovery,
-- genre/category recommendations,
-- trending plus personalized blending,
-- continue-reading and next-item surfaces,
-- cold-start recommendations for new users or new content.
+- homepage recommendations,
+- similar-story rows,
+- author discovery,
+- category pages,
+- trending plus personal taste,
+- continue-reading suggestions,
+- new-story cold-start fallback.
 
-## Signals A Real Platform Would Use
+## Signals A Real Platform Would Need
 
-### User Behavior
+User behavior:
 
-- story opens,
+- opens,
 - reading time,
-- completion rate,
+- completion,
 - saves,
 - follows,
 - shares,
-- ratings/reviews,
+- reviews,
 - skips,
 - hides,
-- session sequence.
+- session order.
 
-### Item Attributes
+Item data:
 
 - language,
 - genre,
@@ -52,33 +66,38 @@ The same pipeline can support:
 - length,
 - tags,
 - publish date,
-- popularity,
 - freshness,
-- content embedding.
+- popularity,
+- text or content embedding.
 
-### Context
+Context:
 
 - device,
-- session time,
-- entry surface,
+- time of day,
+- entry page,
 - recent history,
-- user language preference,
-- new vs returning user.
+- preferred language,
+- new or returning user.
 
-## Why The Project Is Relevant
+## What This Repo Covers
 
-The project demonstrates the core structure behind discovery systems:
+This repo covers the offline version:
 
-1. Learn from user-item behavior.
-2. Represent item metadata.
-3. Retrieve plausible candidates.
-4. Rank candidates with multiple signals.
-5. Generate recommendation lists at scale.
-6. Evaluate ranking quality and coverage.
+1. Turn past behavior into training data.
+2. Use item metadata.
+3. Pull top-200 candidate items.
+4. Re-rank candidates with several signals.
+5. Check recall, ranking quality, coverage, diversity, and cold-start fallback.
+6. Write the results to CSV files.
 
-## Interview-Ready Talking Point
+## Interview Talking Point
 
-The project is not a Pratilipi clone. It is a public-data recommender benchmark
-implemented in a way that maps to Pratilipi's discovery problem: matching readers
-with relevant content using behavior, item attributes, and ranking-friendly
-signals.
+The honest way to say it:
+
+> I rebuilt the project on MovieLens 1M, then shaped it like a content discovery
+> system. It compares popularity, content, ItemKNN, BPR, ALS, and a two-stage
+> hybrid ranker. The strongest angle is not just recall; it is that the hybrid
+> ranker improves recall over popularity while recommending from a much wider
+> part of the catalog.
+
+Do not say it used Pratilipi data or proved business impact. It did not.
