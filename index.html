@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Hybrid recommendation and discovery pipeline with measured MovieLens 1M benchmark metrics, batch scoring, and Pratilipi-style content discovery mapping."
+    />
+    <title>Personalized Recommendation System</title>
+    <link rel="stylesheet" href="assets/site.css" />
+  </head>
+  <body>
+    <header class="site-header" aria-label="Project navigation">
+      <a class="brand" href="#top" aria-label="Personalized Recommendation System home">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span>Personalized Recommendation System</span>
+      </a>
+      <nav class="nav-links" aria-label="Page sections">
+        <a href="#evidence">Evidence</a>
+        <a href="#models">Models</a>
+        <a href="#recommendations">Output</a>
+        <a href="#discovery">Discovery</a>
+      </nav>
+      <a
+        class="repo-link"
+        href="https://github.com/Eishaan-Khatri/Personalized-Recommendation-System"
+        target="_blank"
+        rel="noopener"
+      >
+        GitHub
+      </a>
+    </header>
+
+    <main id="top">
+      <section class="hero" aria-labelledby="hero-title">
+        <canvas id="signal-canvas" class="signal-canvas" width="1440" height="920" aria-hidden="true"></canvas>
+        <div class="hero-content">
+          <p class="eyebrow">MovieLens 1M benchmark / hybrid recommendation pipeline</p>
+          <h1 id="hero-title">Recommendation evidence, not recommendation theatre.</h1>
+          <p class="hero-copy">
+            A small, reproducible discovery system that compares popularity,
+            content, collaborative, and hybrid ranking signals over a sparse
+            1M+ interaction dataset.
+          </p>
+          <div class="hero-actions" aria-label="Primary links">
+            <a class="button button-primary" href="#models">Inspect metrics</a>
+            <a class="button button-secondary" href="reports/final_report.md">Read report</a>
+          </div>
+        </div>
+        <dl class="metric-strip" aria-label="Benchmark summary">
+          <div>
+            <dt>Ratings</dt>
+            <dd>1,000,209</dd>
+          </div>
+          <div>
+            <dt>Users</dt>
+            <dd>6,040</dd>
+          </div>
+          <div>
+            <dt>Catalog items</dt>
+            <dd>3,883</dd>
+          </div>
+          <div>
+            <dt>Best model</dt>
+            <dd>Hybrid</dd>
+          </div>
+        </dl>
+      </section>
+
+      <section id="evidence" class="section section-tight">
+        <div class="section-heading">
+          <p class="eyebrow">Ground truth</p>
+          <h2>Where the numbers come from</h2>
+        </div>
+        <div class="evidence-grid">
+          <article class="evidence-block">
+            <span class="block-label">Source</span>
+            <h3>MovieLens 1M public benchmark</h3>
+            <p>
+              The raw data contains anonymous MovieLens users, movie metadata,
+              and timestamped 1-5 star ratings. It is not Pratilipi data and it
+              is not a business-impact dataset.
+            </p>
+          </article>
+          <article class="evidence-block">
+            <span class="block-label">Evaluation task</span>
+            <h3>Latest positive item holdout</h3>
+            <p>
+              Ratings of 4 or 5 are treated as positive interactions. For each
+              eligible user, the latest positive item is hidden and models try
+              to recover it in the top 10.
+            </p>
+          </article>
+          <article class="evidence-block">
+            <span class="block-label">Claim boundary</span>
+            <h3>Offline metrics only</h3>
+            <p>
+              Recall, NDCG, coverage, and sample recommendations are real
+              benchmark outputs. Conversion, retention, revenue, and production
+              impact are not claimed.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section id="models" class="section section-split" aria-labelledby="models-title">
+        <div class="section-heading">
+          <p class="eyebrow">Measured comparison</p>
+          <h2 id="models-title">Hybrid wins on ranking quality without collapsing coverage.</h2>
+          <p>
+            The top model improves Recall@10 over popularity by 23.3% relative
+            and expands catalog coverage from 2.96% to 15.94%.
+          </p>
+        </div>
+
+        <div class="model-board">
+          <div class="model-tabs" role="tablist" aria-label="Model metric selector">
+            <button class="tab is-active" type="button" data-metric="recall">Recall@10</button>
+            <button class="tab" type="button" data-metric="ndcg">NDCG@10</button>
+            <button class="tab" type="button" data-metric="coverage">Coverage@10</button>
+          </div>
+          <div id="chart" class="metric-chart" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <section id="recommendations" class="section output-section" aria-labelledby="output-title">
+        <div class="section-heading">
+          <p class="eyebrow">Batch scoring output</p>
+          <h2 id="output-title">Sample top-10 recommendations generated by the hybrid model.</h2>
+        </div>
+        <div class="recommendation-layout">
+          <div class="user-rail" aria-label="Sample users">
+            <button class="user-button is-active" type="button" data-user="1">User 1</button>
+            <button class="user-button" type="button" data-user="2">User 2</button>
+            <button class="user-button" type="button" data-user="3">User 3</button>
+          </div>
+          <div class="recommendation-panel">
+            <div class="panel-head">
+              <span>Ranked output</span>
+              <strong id="active-user-label">User 1</strong>
+            </div>
+            <ol id="recommendation-list" class="recommendation-list"></ol>
+          </div>
+        </div>
+      </section>
+
+      <section id="discovery" class="section discovery-section" aria-labelledby="discovery-title">
+        <div class="section-heading">
+          <p class="eyebrow">Pratilipi fit</p>
+          <h2 id="discovery-title">The same system shape maps cleanly to content discovery.</h2>
+        </div>
+        <div class="pipeline">
+          <article>
+            <span>01</span>
+            <h3>Reader signals</h3>
+            <p>Reads, likes, saves, follows, completion depth, skips, reviews, and session sequence.</p>
+          </article>
+          <article>
+            <span>02</span>
+            <h3>Candidate retrieval</h3>
+            <p>Behavioral embeddings and item metadata narrow a large story catalog into plausible candidates.</p>
+          </article>
+          <article>
+            <span>03</span>
+            <h3>Discovery ranking</h3>
+            <p>Hybrid scores balance relevance, similarity, freshness, popularity, and catalog coverage.</p>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <p>Offline benchmark project. Anonymous MovieLens users. No production or business-lift claim.</p>
+      <a href="outputs/metrics/model_comparison.csv">Model metrics CSV</a>
+    </footer>
+
+    <script src="assets/site.js"></script>
+  </body>
+</html>
